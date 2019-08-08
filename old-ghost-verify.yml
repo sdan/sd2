@@ -1,0 +1,20 @@
+version: "3"
+
+networks:
+  proxy:
+    external: true
+  internal:
+    external: false
+services:
+  blgsuryadcom:
+    image: dantuluri/blogverify:latest
+    restart: always
+    labels:
+      - traefik.backend=blgsuryadcom
+      - traefik.frontend.rule=Host:blog.suryad.com
+      - traefik.docker.network=proxy
+      - traefik.port=5001
+    networks:
+      - proxy
+    deploy:
+      replicas: 2
