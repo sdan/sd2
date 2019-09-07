@@ -202,13 +202,13 @@ services:
       - proxy
       - internal
     environment:
-        - DB_HOST=mariadb
-        - DB_DATABASE=${DB_DATABASE}
-        - DB_USERNAME=${DB_USERNAME}
-        - DB_PASSWORD=${DB_PASSWORD}
-        - ADMIN_USERNAME=${ADMIN_USERNAME}
-        - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-        - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - DB_HOST=mariadb
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
     depends_on:
         - mariadb
 
