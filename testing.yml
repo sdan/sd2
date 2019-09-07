@@ -9,15 +9,17 @@ services:
   ghost:
     image: ghost:latest
     restart: always
+    depends_on:
+      - db
     ports:
       - 2368-2370:2368
     environment:
       url: http://blog.suryad.com
-      database__client: sqlite3
-      mail__transport: SMTP
-      mail__options__service: FastMail
-      mail__options__auth__user: ${EMAILUSER}
-      mail__options__auth__pass: ${EMAILPASD}
+      database__client: mysql
+      database__connection__host: db
+      database__connection__user: root
+      database__connection__password: goodpass
+      database__connection__database: ghost
     labels:
       - traefik.backend=ghost
       - traefik.frontend.rule=Host:blog.suryad.com
@@ -31,6 +33,17 @@ services:
     deploy:
       replicas: 3
 
+  db:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: goodpass
+    labels:
+      - traefik.enable=false
+    networks:
+      - internal
+    volumes:
+      - /opt/ghost_mysql:/var/lib/mysql
 
   suryadcom:
     image: dantuluri/suryadcom:latest
@@ -108,15 +121,15 @@ services:
       - traefik.port=8080
     ports:
       - 8084:8080
-  statex:
+  statsd:
     image: usefathom/fathom:latest
     volumes:
-      - /host/fathom/statex.db:/app/fathom.db
+      - /host/fathom/statsd.db:/app/fathom.db
     networks:
       - proxy
     labels:
       - traefik.backend=statsd
-      - traefik.frontend.rule=Host:statex.suryad.com
+      - traefik.frontend.rule=Host:statsd.suryad.com
       - traefik.docker.network=proxy
       - traefik.port=8080
     ports:
