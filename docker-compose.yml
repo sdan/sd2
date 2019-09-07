@@ -187,6 +187,50 @@ services:
         - ~/redis_data:/data
 
 
+
+  polr:
+    image: ajanvier/polr
+    container_name: polr
+    ports:
+        - "82:80"
+    labels:
+      - traefik.backend=polr
+      - traefik.frontend.rule=Host:sdan.xyz
+      - traefik.docker.network=proxy
+      - traefik.port=80
+    networks:
+      - proxy
+      - internal
+    environment:
+        - DB_HOST=mariadb
+        - DB_DATABASE=${DB_DATABASE}
+        - DB_USERNAME=${DB_USERNAME}
+        - DB_PASSWORD=${DB_PASSWORD}
+        - ADMIN_USERNAME=${ADMIN_USERNAME}
+        - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+        - ADMIN_EMAIL=${ADMIN_EMAIL}
+    depends_on:
+        - mariadb
+
+  mariadb:
+    image: mariadb
+    container_name: mariadb
+    labels:
+      - traefik.enable=false
+    networks:
+      - internal
+    restart: always
+    expose:
+      - "3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${DB_DATABASE}
+      - MYSQL_USER=${DB_USERNAME}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - /var/lib/mysql
+
+
   server:
     image: registry.gitlab.com/commento/commento:v1.7.0
     ports:

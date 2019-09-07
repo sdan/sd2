@@ -1,0 +1,17 @@
+polr:
+    image: james9074/polr:latest
+    volumes:
+    - /data/polr/web:/data
+    links:
+    - db:db
+    ports:
+    - 80:80/tcp
+  db:
+    image: mysql
+    environment:
+      MYSQL_DATABASE: polr
+      MYSQL_PASSWORD: polr-password
+      MYSQL_ROOT_PASSWORD: super-secure-pw
+      MYSQL_USER: polr
+    volumes:
+    - /data/polr/db:/var/lib/mysql
