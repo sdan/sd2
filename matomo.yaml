@@ -1,0 +1,139 @@
+version: "3"
+
+networks:
+  proxy:
+    external: true
+  internal:
+    external: false
+services:
+  ghost:
+    image: ghost:latest
+    restart: always
+    ports:
+      - 2368-2370:2368
+    environment:
+      url: http://blog.suryad.com
+      database__client: sqlite3
+      mail__transport: SMTP
+      mail__options__service: FastMail
+      mail__options__auth__user: ${EMAILUSER}
+      mail__options__auth__pass: ${EMAILPASD}
+    labels:
+      - traefik.backend=ghost
+      - traefik.frontend.rule=Host:blog.suryad.com
+      - traefik.docker.network=proxy
+      - traefik.port=2368
+    networks:
+      - internal
+      - proxy
+    volumes:
+      - /opt/ghost_content:/var/lib/ghost/content
+    deploy:
+      replicas: 3
+  suryadcom:
+    image: dantuluri/suryadcom:latest
+    restart: always
+    labels:
+      - traefik.backend=suryadcom
+      - traefik.frontend.rule=Host:suryad.com
+      - traefik.docker.network=proxy
+      - traefik.port=5000
+    networks:
+      - proxy
+    deploy:
+      replicas: 2
+  sd1suryadcom:
+    image: dantuluri/sd1:latest
+    restart: always
+    labels:
+      - traefik.backend=sd1suryadcom
+      - traefik.frontend.rule=Host:sd1.suryad.com
+      - traefik.docker.network=proxy
+      - traefik.port=5001
+    networks:
+      - proxy
+    deploy:
+      replicas: 2
+
+  statdb:
+    image: mariadb
+    labels:
+      - traefik.enable=false
+    networks:
+      - internal
+    command: --max-allowed-packet=64MB
+    restart: always
+    volumes:
+      - statdb:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=123
+    env_file:
+      - ./statdb.env
+
+  statapp:
+    image: matomo:fpm-alpine
+    labels:
+      - traefik.enable=false
+    networks:
+      - internal
+    restart: always
+    links:
+      - statdb
+    volumes:
+      - matomo:/var/www/html
+    environment:
+      - MATOMO_DATABASE_HOST=statdb
+    env_file:
+      - ./statdb.env
+
+  statweb:
+    image: nginx:alpine
+    restart: always
+    labels:
+      - traefik.backend=statweb
+      - traefik.frontend.rule=Host:stats.suryad.com
+      - traefik.docker.network=proxy
+      - traefik.port=80
+    networks:
+      - internal
+      - proxy
+    volumes:
+      - matomo:/var/www/html:ro
+      # see https://github.com/matomo-org/matomo-nginx
+      - ./matomo.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - 8080:80
+
+
+  server:
+    image: registry.gitlab.com/commento/commento:v1.7.0
+    ports:
+      - 8089:8080
+    environment:
+      COMMENTO_ORIGIN: https://habla.suryad.com
+      COMMENTO_PORT: 8089
+      COMMENTO_POSTGRES: postgres://postgres:postgres@post:5432/commento?sslmode=disable
+    labels:
+      - traefik.backend=server
+      - traefik.frontend.rule=Host:habla.suryad.com
+      - traefik.docker.network=proxy
+      - traefik.port=8089
+    depends_on:
+      - post
+    networks:
+      - internal
+      - proxy
+  post:
+    image: postgres
+    environment:
+      POSTGRES_DB: commento
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data_volume:/var/lib/postgresql/data
+    networks:
+      - internal
+volumes:
+  postgres_data_volume:
+  statdb:
+  matomo:
