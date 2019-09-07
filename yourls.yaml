@@ -1,0 +1,5 @@
+ environment:
+      YOURLS_DB_PASS: example
+      YOURLS_SITE: https://example.com
+      YOURLS_USER: example_username
+      YOURLS_PASS: example_password

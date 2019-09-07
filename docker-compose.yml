@@ -188,44 +188,34 @@ services:
 
 
 
-  polr:
-    image: ajanvier/polr
-    container_name: polr
+  yourls:
+    image: yourls
+    restart: always
     ports:
-        - "82:80"
+      - 8087:80
     labels:
-      - traefik.backend=polr
+      - traefik.backend=yourls
       - traefik.frontend.rule=Host:sdan.xyz
       - traefik.docker.network=proxy
       - traefik.port=80
+    env_file:
+      - youlr.env
     networks:
+      - internal
       - proxy
-      - internal
-    env_file:
-      - polr.env
-    depends_on:
-        - mariadb
-
-  mariadb:
-    image: mariadb
-    container_name: mariadb
-    labels:
-      - traefik.enable=false
-    networks:
-      - internal
+   
+  mysql:
+    image: mysql:5.7
     restart: always
-    expose:
-      - "3306"
     env_file:
-      - maria.env
-    volumes:
-      - /var/lib/mysql
-
+      - mysql.env
+    networks:
+      - internal 
 
   server:
     image: registry.gitlab.com/commento/commento:v1.7.0
     ports:
-      - 8080:8080
+      - 8086:8080
     environment:
       COMMENTO_ORIGIN: https://habla.suryad.com
       COMMENTO_PORT: 8080
