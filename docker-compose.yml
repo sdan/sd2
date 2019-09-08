@@ -186,8 +186,6 @@ services:
     volumes:
         - ~/redis_data:/data
 
-
-
   yourls:
     image: yourls
     restart: always
@@ -240,6 +238,29 @@ services:
       - postgres_data_volume:/var/lib/postgresql/data
     networks:
       - internal
+
+
+  netdata:
+    image: netdata/netdata
+    hostname: suryad.com
+    ports:
+      - 19999:19999
+    labels:
+      - traefik.backend=netdata
+      - traefik.frontend.rule=Host:server.suryad.com
+      - traefik.docker.network=proxy
+      - traefik.port=19999
+    networks:
+      - proxy
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - apparmor:unconfined
+    volumes:
+      - /etc/passwd:/host/etc/passwd:ro
+      - /etc/group:/host/etc/group:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
 
 
 volumes:
