@@ -56,6 +56,8 @@ services:
       - proxy
     deploy:
       replicas: 2
+
+
   stats:
     image: usefathom/fathom:latest
     volumes:
@@ -69,32 +71,30 @@ services:
       - traefik.port=8080
     ports:
       - 8081:8080
-  statblog:
-    image: usefathom/fathom:latest
-    volumes:
-      - /host/fathom/statblog.db:/app/fathom.db
-    networks:
-      - proxy
+
+  ackee:
+    image: electerious/ackee
+    container_name: ackee
+    restart: always
     labels:
-      - traefik.backend=statblog
-      - traefik.frontend.rule=Host:statblog.suryad.com
+      - traefik.backend=ackee
+      - traefik.frontend.rule=Host:stats.suryad.com
       - traefik.docker.network=proxy
-      - traefik.port=8080
-    ports:
-      - 8082:8080
-  statmain:
-    image: usefathom/fathom:latest
-    volumes:
-      - /host/fathom/statmain.db:/app/fathom.db
+      - traefik.port=3000
     networks:
+      - internal
       - proxy
-    labels:
-      - traefik.backend=statmain
-      - traefik.frontend.rule=Host:statmain.suryad.com
-      - traefik.docker.network=proxy
-      - traefik.port=8080
     ports:
-      - 8083:8080
+      - "3000:3000"
+    environment:
+      - WAIT_HOSTS=mongo:27017
+      - MONGODB=mongodb://mongo:27017/ackee
+    env_file:
+      - .env
+    depends_on:
+      - mongo
+
+
   statdata:
     image: usefathom/fathom:latest
     volumes:
