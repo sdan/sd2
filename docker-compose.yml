@@ -1,0 +1,214 @@
+version: "3"
+
+networks:
+  proxy:
+    external: true
+  internal:
+    external: false
+services:
+
+  ghost:
+    image: ghost:latest
+    restart: always
+    ports:
+      - 2368-2370:2368
+    environment:
+      url: http://blog.suryad.com
+      database__client: sqlite3
+      mail__transport: SMTP
+      mail__options__service: FastMail
+      mail__options__auth__user: ${EMAILUSER}
+      mail__options__auth__pass: ${EMAILPASD}
+    labels:
+      - traefik.backend=ghost
+      - traefik.frontend.rule=Host:blog.suryad.com
+      - traefik.docker.network=proxy
+      - traefik.port=2368
+    networks:
+      - internal
+      - proxy
+    volumes:
+      - /opt/ghost_content:/var/lib/ghost/content
+    deploy:
+      replicas: 3
+
+
+  suryadcom:
+    image: dantuluri/suryadcom:latest
+    restart: always
+    labels:
+      - traefik.backend=suryadcom
+      - traefik.frontend.rule=Host:suryad.com
+      - traefik.docker.network=proxy
+      - traefik.port=5000
+    networks:
+      - proxy
+    deploy:
+      replicas: 2
+  sd2suryadcom:
+    image: dantuluri/sd1:latest
+    restart: always
+    labels:
+      - traefik.backend=sd2suryadcom
+      - traefik.frontend.rule=Host:sd2.suryad.com
+      - traefik.docker.network=proxy
+      - traefik.port=5001
+    networks:
+      - proxy
+    deploy:
+      replicas: 2
+  drfsuryadcom:
+    image: dantuluri/drf:latest
+    restart: always
+    labels:
+      - traefik.backend=drfsuryadcom
+      - traefik.frontend.rule=Host:drf.suryad.com
+      - traefik.docker.network=proxy
+      - traefik.port=5002
+    networks:
+      - proxy
+    deploy:
+      replicas: 2
+
+  sharelatex:
+    restart: always
+    image: sharelatex/sharelatex
+    container_name: sharelatex
+    depends_on:
+        - mongo
+        - redis
+    networks:
+      - internal
+      - proxy
+    privileged: true
+    ports:
+        - 81:80
+    labels:
+      - traefik.backend=sharelatex
+      - traefik.frontend.rule=Host:latex.suryad.com
+      - traefik.docker.network=proxy
+      - traefik.port=80
+    links:
+        - mongo
+        - redis
+    volumes:
+        - ~/sharelatex_data:/var/lib/sharelatex
+        - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+
+        SHARELATEX_APP_NAME: Overleaf Community Edition
+
+        SHARELATEX_MONGO_URL: mongodb://mongo/sharelatex
+
+        # Same property, unfortunately with different names in
+        # different locations
+        SHARELATEX_REDIS_HOST: redis
+        REDIS_HOST: redis
+
+        ENABLED_LINKED_FILE_TYPES: 'url,project_file'
+
+  mongo:
+    restart: always
+    image: mongo
+    container_name: mongo
+    labels:
+      - traefik.enable=false
+    networks:
+      - internal
+    expose:
+        - 27017
+    volumes:
+        - ~/mongo_data:/data/db
+
+  redis:
+    restart: always
+    image: redis
+    container_name: redis
+    labels:
+      - traefik.enable=false
+    networks:
+      - internal
+    expose:
+        - 6379
+    volumes:
+        - ~/redis_data:/data
+
+  yourls:
+    image: yourls
+    restart: always
+    ports:
+      - 8087:80
+    labels:
+      - traefik.backend=yourls
+      - traefik.frontend.rule=Host:sdan.xyz
+      - traefik.docker.network=proxy
+      - traefik.port=80
+    env_file:
+      - yourl.env
+    networks:
+      - internal
+      - proxy
+   
+  mysql:
+    image: mysql:5.7
+    restart: always
+    env_file:
+      - mysql.env
+    networks:
+      - internal 
+
+  server:
+    image: registry.gitlab.com/commento/commento:v1.7.0
+    ports:
+      - 8086:8080
+    environment:
+      COMMENTO_ORIGIN: https://habla.suryad.com
+      COMMENTO_PORT: 8080
+      COMMENTO_POSTGRES: postgres://postgres:postgres@post:5432/commento?sslmode=disable
+    labels:
+      - traefik.backend=server
+      - traefik.frontend.rule=Host:habla.suryad.com
+      - traefik.docker.network=proxy
+      - traefik.port=8080
+    depends_on:
+      - post
+    networks:
+      - internal
+      - proxy
+  post:
+    image: postgres
+    environment:
+      POSTGRES_DB: commento
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data_volume:/var/lib/postgresql/data
+    networks:
+      - internal
+
+
+  netdata:
+    image: netdata/netdata
+    hostname: suryad.com
+    ports:
+      - 19999:19999
+    labels:
+      - traefik.backend=netdata
+      - traefik.frontend.rule=Host:server.suryad.com
+      - traefik.docker.network=proxy
+      - traefik.port=19999
+    networks:
+      - proxy
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - apparmor:unconfined
+    volumes:
+      - /etc/passwd:/host/etc/passwd:ro
+      - /etc/group:/host/etc/group:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+
+
+volumes:
+  postgres_data_volume:
