@@ -6,6 +6,7 @@ networks:
   internal:
     external: false
 services:
+
   ghost:
     image: ghost:latest
     restart: always
@@ -44,43 +45,30 @@ services:
       - proxy
     deploy:
       replicas: 2
-  sd1suryadcom:
+  sd2suryadcom:
     image: dantuluri/sd1:latest
     restart: always
     labels:
-      - traefik.backend=sd1suryadcom
-      - traefik.frontend.rule=Host:sd1.suryad.com
+      - traefik.backend=sd2suryadcom
+      - traefik.frontend.rule=Host:sd2.suryad.com
       - traefik.docker.network=proxy
       - traefik.port=5001
     networks:
       - proxy
     deploy:
       replicas: 2
-
-
-  ackee:
-    image: electerious/ackee
-    container_name: ackee
+  drfsuryadcom:
+    image: dantuluri/drf:latest
     restart: always
     labels:
-      - traefik.backend=ackee
-      - traefik.frontend.rule=Host:stats.suryad.com
+      - traefik.backend=drfsuryadcom
+      - traefik.frontend.rule=Host:drf.suryad.com
       - traefik.docker.network=proxy
-      - traefik.port=3000
+      - traefik.port=5002
     networks:
-      - internal
       - proxy
-    ports:
-      - 3000:3000
-    environment:
-      - WAIT_HOSTS=mongo
-      - MONGODB=mongodb://mongo/ackee
-    env_file:
-      - .env
-    depends_on:
-      - mongo
-
-
+    deploy:
+      replicas: 2
 
   sharelatex:
     restart: always
@@ -156,7 +144,7 @@ services:
       - traefik.docker.network=proxy
       - traefik.port=80
     env_file:
-      - youlr.env
+      - yourl.env
     networks:
       - internal
       - proxy
