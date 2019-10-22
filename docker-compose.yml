@@ -11,7 +11,7 @@ services:
     image: ghost:latest
     restart: always
     ports:
-      - 2368-2370:2368
+      - 2367-2368:2368
     environment:
       url: http://blog.suryad.com
       database__client: sqlite3
@@ -30,8 +30,32 @@ services:
     volumes:
       - /opt/ghost_content:/var/lib/ghost/content
     deploy:
-      replicas: 3
+      replicas: 2
 
+  ghost_essays:
+    image: ghost:latest
+    restart: always
+    ports:
+      - 2369-2370:2368
+    environment:
+      url: http://essays.suryad.com
+      database__client: sqlite3
+      mail__transport: SMTP
+      mail__options__service: FastMail
+      mail__options__auth__user: ${EMAILUSER}
+      mail__options__auth__pass: ${EMAILPASD}
+    labels:
+      - traefik.backend=ghost_essays
+      - traefik.frontend.rule=Host:essays.suryad.com
+      - traefik.docker.network=proxy
+      - traefik.port=2368
+    networks:
+      - internal
+      - proxy
+    volumes:
+      - /opt/ghost_essays_content:/var/lib/ghost/content
+    deploy:
+      replicas: 2
 
   suryadcom:
     image: dantuluri/suryadcom:latest
@@ -156,9 +180,12 @@ services:
       - mysql.env
     networks:
       - internal 
+    volumes:
+      - ~/mysql_data:/var/lib/mysql
 
   server:
     image: registry.gitlab.com/commento/commento:v1.7.0
+    restart: always
     ports:
       - 8086:8080
     environment:
@@ -182,7 +209,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     volumes:
-      - postgres_data_volume:/var/lib/postgresql/data
+      - ~/postgres_data:/var/lib/postgresql/data
     networks:
       - internal
 
@@ -209,6 +236,3 @@ services:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
 
-
-volumes:
-  postgres_data_volume:
