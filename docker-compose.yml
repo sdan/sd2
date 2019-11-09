@@ -12,13 +12,8 @@ services:
     restart: always
     ports:
       - 2367-2368:2368
-    environment:
-      url: http://blog.suryad.com
-      database__client: sqlite3
-      mail__transport: SMTP
-      mail__options__service: FastMail
-      mail__options__auth__user: ${EMAILUSER}
-      mail__options__auth__pass: ${EMAILPASD}
+    env_file:
+      - ghost.env
     labels:
       - traefik.backend=ghost
       - traefik.frontend.rule=Host:blog.suryad.com
@@ -89,6 +84,18 @@ services:
       - traefik.frontend.rule=Host:drf.suryad.com
       - traefik.docker.network=proxy
       - traefik.port=5002
+    networks:
+      - proxy
+    deploy:
+      replicas: 2
+  scopesuryadcom:
+    image: scopehat/website:latest
+    restart: always
+    labels:
+      - traefik.backend=scopesuryadcom
+      - traefik.frontend.rule=Host:scope.suryad.com
+      - traefik.docker.network=proxy
+      - traefik.port=5003
     networks:
       - proxy
     deploy:
