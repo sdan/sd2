@@ -99,70 +99,7 @@ services:
     networks:
       - proxy
     deploy:
-      replicas: 2
-
-  sharelatex:
-    restart: always
-    image: sharelatex/sharelatex
-    container_name: sharelatex
-    depends_on:
-        - mongo
-        - redis
-    networks:
-      - internal
-      - proxy
-    privileged: true
-    ports:
-        - 81:80
-    labels:
-      - traefik.backend=sharelatex
-      - traefik.frontend.rule=Host:latex.suryad.com
-      - traefik.docker.network=proxy
-      - traefik.port=80
-    links:
-        - mongo
-        - redis
-    volumes:
-        - ~/sharelatex_data:/var/lib/sharelatex
-        - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-
-        SHARELATEX_APP_NAME: Overleaf Community Edition
-
-        SHARELATEX_MONGO_URL: mongodb://mongo/sharelatex
-
-        # Same property, unfortunately with different names in
-        # different locations
-        SHARELATEX_REDIS_HOST: redis
-        REDIS_HOST: redis
-
-        ENABLED_LINKED_FILE_TYPES: 'url,project_file'
-
-  mongo:
-    restart: always
-    image: mongo
-    container_name: mongo
-    labels:
-      - traefik.enable=false
-    networks:
-      - internal
-    expose:
-        - 27017
-    volumes:
-        - ~/mongo_data:/data/db
-
-  redis:
-    restart: always
-    image: redis
-    container_name: redis
-    labels:
-      - traefik.enable=false
-    networks:
-      - internal
-    expose:
-        - 6379
-    volumes:
-        - ~/redis_data:/data
+      replicas: 2 
 
   yourls:
     image: yourls
@@ -179,16 +116,6 @@ services:
     networks:
       - internal
       - proxy
-   
-  mysql:
-    image: mysql:5.7
-    restart: always
-    env_file:
-      - mysql.env
-    networks:
-      - internal 
-    volumes:
-      - ~/mysql_data:/var/lib/mysql
 
   server:
     image: registry.gitlab.com/commento/commento:v1.7.0
